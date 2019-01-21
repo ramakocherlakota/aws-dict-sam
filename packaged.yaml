@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'aws-dict-sam
+
+  Sample SAM Template for aws-dict-sam
+
+  '
+Globals:
+  Function:
+    Timeout: 3
+Outputs:
+  AnagramApi:
+    Description: API Gateway endpoint URL for Prod stage for Anagram function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/anagram/
+  AnagramFunction:
+    Description: Anagram Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - AnagramFunction
+      - Arn
+  AnagramFunctionIamRole:
+    Description: Implicit IAM Role created for Anagram function
+    Value:
+      Fn::GetAtt:
+      - AnagramFunctionRole
+      - Arn
+  FillInBlanksApi:
+    Description: API Gateway endpoint URL for Prod stage for FillInBlanks function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/fill-in-blanks/
+  FillInBlanksFunction:
+    Description: Fill In Blanks Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - FillInBlanksFunction
+      - Arn
+  FillInBlanksFunctionIamRole:
+    Description: Implicit IAM Role created for Fill In Blanks function
+    Value:
+      Fn::GetAtt:
+      - FillInBlanksFunctionRole
+      - Arn
+Resources:
+  AnagramFunction:
+    Properties:
+      CodeUri: s3://dict-lambda-code/7bb8e12e4f19a8ea20c596d335410f7b
+      Environment:
+        Variables:
+          PARAM1: VALUE
+      Events:
+        Anagram:
+          Properties:
+            Method: get
+            Path: /anagram
+          Type: Api
+      Handler: app.lambda_handler
+      Policies:
+      - AWSLambdaExecute
+      - Statement:
+        - Action:
+          - dynamodb:GetItem
+          Effect: Allow
+          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/anagram-data
+        Version: '2012-10-17'
+      Runtime: python3.7
+    Type: AWS::Serverless::Function
+  FillInBlanksFunction:
+    Properties:
+      CodeUri: s3://dict-lambda-code/d377e579f490a0d2071c067e19d15e11
+      Environment:
+        Variables:
+          PARAM1: VALUE
+      Events:
+        FillInBlanks:
+          Properties:
+            Method: get
+            Path: /fill-in-blanks
+          Type: Api
+      Handler: app.lambda_handler
+      Runtime: python3.7
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
