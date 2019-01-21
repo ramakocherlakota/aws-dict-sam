@@ -5,6 +5,11 @@ Description: 'aws-dict-sam
 
   '
 Globals:
+  Api:
+    Cors:
+      AllowHeaders: '''*'''
+      AllowMethods: '''*'''
+      AllowOrigin: '''*.rkocherl.net'''
   Function:
     Timeout: 3
 Outputs:
@@ -43,7 +48,7 @@ Outputs:
 Resources:
   AnagramFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/7bb8e12e4f19a8ea20c596d335410f7b
+      CodeUri: s3://dict-lambda-code/0827ec12b68ea9262e5050fd3d357252
       Environment:
         Variables:
           PARAM1: VALUE
@@ -66,7 +71,7 @@ Resources:
     Type: AWS::Serverless::Function
   FillInBlanksFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/d377e579f490a0d2071c067e19d15e11
+      CodeUri: s3://dict-lambda-code/b045ed7f1478c92c91b4715e845dac97
       Environment:
         Variables:
           PARAM1: VALUE
