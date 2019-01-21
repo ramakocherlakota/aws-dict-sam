@@ -16,7 +16,14 @@ def fill_in_blanks(input) :
 
 def lambda_handler(event, context) :
     matches = fill_in_blanks(event['queryStringParameters']['pattern'])
+    headers = {
+        "Access-Control-Allow-Headers": 
+        "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
+    };
     return {
+        "headers" : headers,
         "statusCode": 200,
         "body": json.dumps(
             {"matches": matches}

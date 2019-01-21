@@ -19,7 +19,14 @@ def anagram(input) :
 def lambda_handler(event, context) :
     try :
         matches = anagram(event['queryStringParameters']['pattern'])
+        headers = {
+                "Access-Control-Allow-Headers": 
+                "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
+            };
         return {
+            "headers": headers,
             "statusCode": 200,
             "body": json.dumps(
                 {"matches": matches}
@@ -27,6 +34,7 @@ def lambda_handler(event, context) :
         }
     except ClientError as err :
         return {
+            "headers": headers,
             "statusCode": 500,
             "body": json.dumps(
                 {

@@ -48,7 +48,7 @@ Outputs:
 Resources:
   AnagramFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/0827ec12b68ea9262e5050fd3d357252
+      CodeUri: s3://dict-lambda-code/c9c9f27871b6377cf9b3b82e2ea76b2c
       Environment:
         Variables:
           PARAM1: VALUE
@@ -71,7 +71,7 @@ Resources:
     Type: AWS::Serverless::Function
   FillInBlanksFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/b045ed7f1478c92c91b4715e845dac97
+      CodeUri: s3://dict-lambda-code/178918128e951a4472ee553cdd5d44e7
       Environment:
         Variables:
           PARAM1: VALUE
