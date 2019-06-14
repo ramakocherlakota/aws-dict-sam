@@ -9,7 +9,7 @@ Globals:
     Cors:
       AllowHeaders: '''*'''
       AllowMethods: '''*'''
-      AllowOrigin: '''*.rkocherl.net'''
+      AllowOrigin: '''*.ramakocherlakota.net'''
   Function:
     Timeout: 3
 Outputs:
@@ -48,7 +48,7 @@ Outputs:
 Resources:
   AnagramFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/c9c9f27871b6377cf9b3b82e2ea76b2c
+      CodeUri: s3://dict-lambda-code/76b6b7d4891e3e9fd6952ddecf7e2b87
       Environment:
         Variables:
           PARAM1: VALUE
@@ -71,7 +71,7 @@ Resources:
     Type: AWS::Serverless::Function
   FillInBlanksFunction:
     Properties:
-      CodeUri: s3://dict-lambda-code/178918128e951a4472ee553cdd5d44e7
+      CodeUri: s3://dict-lambda-code/1a888312b305eca75e4f4f1613ef22c1
       Environment:
         Variables:
           PARAM1: VALUE

@@ -23,7 +23,7 @@ def lambda_handler(event, context) :
                 "Access-Control-Allow-Headers": 
                 "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
                 "Access-Control-Allow-Methods": "GET",
-                "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
+                "Access-Control-Allow-Origin": "https://dict.ramakocherlakota.net"
             };
         return {
             "headers": headers,

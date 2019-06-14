@@ -14,7 +14,7 @@ Globals:
       Cors:
         AllowMethods: "'*'"
         AllowHeaders: "'*'"
-        AllowOrigin: "'*.rkocherl.net'"
+        AllowOrigin: "'*.ramakocherlakota.net'"
 
 
 Resources:
