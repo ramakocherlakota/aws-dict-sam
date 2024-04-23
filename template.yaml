@@ -70,7 +70,7 @@ Resources:
                   - Effect: Allow
                     Action:
                       - dynamodb:GetItem
-                    Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data'
+                    Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/pangram'
             Handler: app.lambda_handler
             Runtime: python3.9
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object

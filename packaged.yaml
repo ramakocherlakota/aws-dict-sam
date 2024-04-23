@@ -59,7 +59,7 @@ Resources:
   PangramFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/8a9abe43647d799b408349b4e90ccfba
+      CodeUri: s3://dict-lambda-code/66341fba895d3c1858db3856b7075e26
       Policies:
       - AWSLambdaExecute
       - Version: '2012-10-17'
@@ -67,7 +67,7 @@ Resources:
         - Effect: Allow
           Action:
           - dynamodb:GetItem
-          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data
+          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/pangram
       Handler: app.lambda_handler
       Runtime: python3.9
       Environment:
