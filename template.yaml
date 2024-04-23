@@ -24,7 +24,7 @@ Resources:
         Properties:
             CodeUri: fill-in-blanks/
             Handler: app.lambda_handler
-            Runtime: python3.7
+            Runtime: python3.9
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
                 Variables:
                     PARAM1: VALUE
@@ -48,7 +48,7 @@ Resources:
                       - dynamodb:GetItem
                     Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/anagram-data'
             Handler: app.lambda_handler
-            Runtime: python3.7
+            Runtime: python3.9
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
                 Variables:
                     PARAM1: VALUE
@@ -58,7 +58,31 @@ Resources:
                     Properties:
                         Path: /anagram
                         Method: get
-                
+
+    PangramFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: pangram/
+            Policies:
+              - AWSLambdaExecute
+              - Version: '2012-10-17' # Policy Document
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - dynamodb:GetItem
+                    Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data'
+            Handler: app.lambda_handler
+            Runtime: python3.9
+            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+                Variables:
+                    PARAM1: VALUE
+            Events:
+                Pangram:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /pangram
+                        Method: get
+                        
 Outputs:
 
     FillInBlanksApi:
@@ -74,22 +98,6 @@ Outputs:
       Value: !GetAtt FillInBlanksFunctionRole.Arn
 
 
-    AnagramFunction:
-        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-        Properties:
-            CodeUri: anagram/
-            Handler: app.lambda_handler
-            Runtime: python3.7
-            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-                Variables:
-                    PARAM1: VALUE
-            Events:
-                Anagram:
-                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-                    Properties:
-                        Path: /anagram
-                        Method: get
-
     AnagramApi:
       Description: "API Gateway endpoint URL for Prod stage for Anagram function"
       Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/anagram/"
@@ -101,4 +109,16 @@ Outputs:
     AnagramFunctionIamRole:
       Description: "Implicit IAM Role created for Anagram function"
       Value: !GetAtt AnagramFunctionRole.Arn
+
+    PangramApi:
+      Description: "API Gateway endpoint URL for Prod stage for Pangram function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/pangram/"
+
+    PangramFunction:
+      Description: "Pangram Lambda Function ARN"
+      Value: !GetAtt PangramFunction.Arn
+
+    PangramFunctionIamRole:
+      Description: "Implicit IAM Role created for Pangram function"
+      Value: !GetAtt PangramFunctionRole.Arn
 

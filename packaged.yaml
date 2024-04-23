@@ -1,34 +1,87 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: 'aws-dict-sam
 
   Sample SAM Template for aws-dict-sam
 
   '
 Globals:
-  Api:
-    Cors:
-      AllowHeaders: '''*'''
-      AllowMethods: '''*'''
-      AllowOrigin: '''*.ramakocherlakota.net'''
   Function:
     Timeout: 3
-Outputs:
-  AnagramApi:
-    Description: API Gateway endpoint URL for Prod stage for Anagram function
-    Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/anagram/
+  Api:
+    Cors:
+      AllowMethods: '''*'''
+      AllowHeaders: '''*'''
+      AllowOrigin: '''*.ramakocherlakota.net'''
+Resources:
+  FillInBlanksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://dict-lambda-code/3f3f1a88916cff099be52e49ad098130
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          PARAM1: VALUE
+      Events:
+        FillInBlanks:
+          Type: Api
+          Properties:
+            Path: /fill-in-blanks
+            Method: get
+    Metadata:
+      SamResourceId: FillInBlanksFunction
   AnagramFunction:
-    Description: Anagram Lambda Function ARN
-    Value:
-      Fn::GetAtt:
-      - AnagramFunction
-      - Arn
-  AnagramFunctionIamRole:
-    Description: Implicit IAM Role created for Anagram function
-    Value:
-      Fn::GetAtt:
-      - AnagramFunctionRole
-      - Arn
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://dict-lambda-code/fd863cb94be83abdf2f773fd546f6966
+      Policies:
+      - AWSLambdaExecute
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:GetItem
+          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/anagram-data
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          PARAM1: VALUE
+      Events:
+        Anagram:
+          Type: Api
+          Properties:
+            Path: /anagram
+            Method: get
+    Metadata:
+      SamResourceId: AnagramFunction
+  PangramFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://dict-lambda-code/8a9abe43647d799b408349b4e90ccfba
+      Policies:
+      - AWSLambdaExecute
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:GetItem
+          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          PARAM1: VALUE
+      Events:
+        Pangram:
+          Type: Api
+          Properties:
+            Path: /pangram
+            Method: get
+    Metadata:
+      SamResourceId: PangramFunction
+Outputs:
   FillInBlanksApi:
     Description: API Gateway endpoint URL for Prod stage for FillInBlanks function
     Value:
@@ -45,43 +98,35 @@ Outputs:
       Fn::GetAtt:
       - FillInBlanksFunctionRole
       - Arn
-Resources:
+  AnagramApi:
+    Description: API Gateway endpoint URL for Prod stage for Anagram function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/anagram/
   AnagramFunction:
-    Properties:
-      CodeUri: s3://dict-lambda-code/76b6b7d4891e3e9fd6952ddecf7e2b87
-      Environment:
-        Variables:
-          PARAM1: VALUE
-      Events:
-        Anagram:
-          Properties:
-            Method: get
-            Path: /anagram
-          Type: Api
-      Handler: app.lambda_handler
-      Policies:
-      - AWSLambdaExecute
-      - Statement:
-        - Action:
-          - dynamodb:GetItem
-          Effect: Allow
-          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/anagram-data
-        Version: '2012-10-17'
-      Runtime: python3.7
-    Type: AWS::Serverless::Function
-  FillInBlanksFunction:
-    Properties:
-      CodeUri: s3://dict-lambda-code/1a888312b305eca75e4f4f1613ef22c1
-      Environment:
-        Variables:
-          PARAM1: VALUE
-      Events:
-        FillInBlanks:
-          Properties:
-            Method: get
-            Path: /fill-in-blanks
-          Type: Api
-      Handler: app.lambda_handler
-      Runtime: python3.7
-    Type: AWS::Serverless::Function
-Transform: AWS::Serverless-2016-10-31
+    Description: Anagram Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - AnagramFunction
+      - Arn
+  AnagramFunctionIamRole:
+    Description: Implicit IAM Role created for Anagram function
+    Value:
+      Fn::GetAtt:
+      - AnagramFunctionRole
+      - Arn
+  PangramApi:
+    Description: API Gateway endpoint URL for Prod stage for Pangram function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/pangram/
+  PangramFunction:
+    Description: Pangram Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - PangramFunction
+      - Arn
+  PangramFunctionIamRole:
+    Description: Implicit IAM Role created for Pangram function
+    Value:
+      Fn::GetAtt:
+      - PangramFunctionRole
+      - Arn
