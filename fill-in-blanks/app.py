@@ -1,6 +1,7 @@
 import json
 import re
 import requests
+from sys import argv
 
 def fill_in_blanks(input) :
     matches = []
@@ -15,7 +16,9 @@ def fill_in_blanks(input) :
     return matches
 
 def lambda_handler(event, context) :
-    matches = fill_in_blanks(event['queryStringParameters']['pattern'])
+    input = event['queryStringParameters']['pattern']
+    print("pattern=" + input)
+    matches = fill_in_blanks(input)
     headers = {
         "Access-Control-Allow-Headers": 
         "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
@@ -31,3 +34,5 @@ def lambda_handler(event, context) :
     }
     
 
+if __name__ == "__main__":
+    print(fill_in_blanks(argv[1]))

@@ -17,7 +17,7 @@ Resources:
   FillInBlanksFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/3f3f1a88916cff099be52e49ad098130
+      CodeUri: s3://dict-lambda-code/9272013bf8d5103823b120af88c0ba10
       Handler: app.lambda_handler
       Runtime: python3.9
       Environment:
@@ -34,7 +34,7 @@ Resources:
   AnagramFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/fd863cb94be83abdf2f773fd546f6966
+      CodeUri: s3://dict-lambda-code/72bb984007ff1a13e2a63a9d7fdf0271
       Policies:
       - AWSLambdaExecute
       - Version: '2012-10-17'
@@ -59,7 +59,7 @@ Resources:
   PangramFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/66341fba895d3c1858db3856b7075e26
+      CodeUri: s3://dict-lambda-code/eb03135693bb091d5f03b3eaebf8049c
       Policies:
       - AWSLambdaExecute
       - Version: '2012-10-17'
@@ -67,7 +67,7 @@ Resources:
         - Effect: Allow
           Action:
           - dynamodb:GetItem
-          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/pangram
+          Resource: arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data
       Handler: app.lambda_handler
       Runtime: python3.9
       Environment:
