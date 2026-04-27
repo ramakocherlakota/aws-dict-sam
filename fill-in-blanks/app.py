@@ -5,7 +5,7 @@ from sys import argv
 
 def fill_in_blanks(input) :
     matches = []
-    pattern = input.lower().replace(" ", ".")
+    pattern = input.lower().replace(" ", ".").replace('\u2026', '...')
     lenPattern = len(pattern)
     regex = re.compile("^"+pattern+"$")
     with open(f"words_{lenPattern}.txt") as file :

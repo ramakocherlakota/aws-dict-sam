@@ -17,7 +17,7 @@ Resources:
   FillInBlanksFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/06e84d2d438096429ce84cdaa9eab61d
+      CodeUri: s3://dict-lambda-code/47a1a0e1580f0a872dcf1782d1589b29
       Handler: app.lambda_handler
       Runtime: python3.9
       Environment:
