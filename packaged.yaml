@@ -17,7 +17,7 @@ Resources:
   FillInBlanksFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/9272013bf8d5103823b120af88c0ba10
+      CodeUri: s3://dict-lambda-code/06e84d2d438096429ce84cdaa9eab61d
       Handler: app.lambda_handler
       Runtime: python3.9
       Environment:
@@ -34,7 +34,7 @@ Resources:
   AnagramFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/72bb984007ff1a13e2a63a9d7fdf0271
+      CodeUri: s3://dict-lambda-code/243d3335a7b4b719ed2c83fd5434f758
       Policies:
       - AWSLambdaExecute
       - Version: '2012-10-17'
@@ -59,7 +59,7 @@ Resources:
   PangramFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://dict-lambda-code/eb03135693bb091d5f03b3eaebf8049c
+      CodeUri: s3://dict-lambda-code/ba458d7ce4aea6a2ab6599de13b40026
       Policies:
       - AWSLambdaExecute
       - Version: '2012-10-17'

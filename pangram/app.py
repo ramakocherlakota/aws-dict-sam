@@ -5,10 +5,10 @@ import json
 from botocore.exceptions import ClientError
 
 dynamodb = boto3.client('dynamodb')
-table_name = "anagram-data"
+table_name = "pangram-data"
 
-def anagram(input) :
-    key = ''.join(sorted(input.lower().replace(" ", "")))
+def pangram(input) :
+    key = ''.join(sorted(dict.fromkeys(input.lower().replace(" ", ""))))
     response = dynamodb.get_item(TableName=table_name,
                                  Key={'id':{'S':key}})
     if 'Item' in response:
@@ -17,14 +17,15 @@ def anagram(input) :
         return []
     
 def lambda_handler(event, context) :
+    headers = {
+            "Access-Control-Allow-Headers": 
+            "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
+        };
     try :
-        matches = anagram(event['queryStringParameters']['pattern'])
-        headers = {
-                "Access-Control-Allow-Headers": 
-                "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
-                "Access-Control-Allow-Methods": "GET",
-                "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
-            };
+        matches = pangram(event['queryStringParameters']['pattern'])
+
         return {
             "headers": headers,
             "statusCode": 200,
