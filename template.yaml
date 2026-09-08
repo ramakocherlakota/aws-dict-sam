@@ -82,7 +82,23 @@ Resources:
                     Properties:
                         Path: /pangram
                         Method: get
-                        
+
+    RegexFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: regex/
+            Handler: app.lambda_handler
+            Runtime: python3.9
+            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+                Variables:
+                    PARAM1: VALUE
+            Events:
+                Regex:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /regex
+                        Method: get
+
 Outputs:
 
     FillInBlanksApi:
@@ -121,4 +137,16 @@ Outputs:
     PangramFunctionIamRole:
       Description: "Implicit IAM Role created for Pangram function"
       Value: !GetAtt PangramFunctionRole.Arn
+
+    RegexApi:
+      Description: "API Gateway endpoint URL for Prod stage for Regex function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/regex/"
+
+    RegexFunction:
+      Description: "Regex Lambda Function ARN"
+      Value: !GetAtt RegexFunction.Arn
+
+    RegexFunctionIamRole:
+      Description: "Implicit IAM Role created for Regex function"
+      Value: !GetAtt RegexFunctionRole.Arn
 
