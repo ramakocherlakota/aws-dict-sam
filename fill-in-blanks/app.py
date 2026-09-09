@@ -1,19 +1,13 @@
 import json
 import re
-import requests
 from sys import argv
+from wordgrep import grep_file
 
 def fill_in_blanks(input) :
-    matches = []
     pattern = input.lower().replace(" ", ".").replace('\u2026', '...')
     lenPattern = len(pattern)
-    regex = re.compile("^"+pattern+"$")
-    with open(f"words_{lenPattern}.txt") as file :
-        for line in file :
-            word = line.rstrip()
-            if regex.match(word) :
-                matches.append(word)
-    return matches
+    regex = re.compile(pattern, re.IGNORECASE)
+    return grep_file(regex, f"words_{lenPattern}.txt")
 
 def lambda_handler(event, context) :
     input = event['queryStringParameters']['pattern']
