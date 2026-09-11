@@ -8,7 +8,7 @@ dynamodb = boto3.client('dynamodb')
 table_name = "pangram-data"
 
 def pangram(input) :
-    key = ''.join(sorted(dict.fromkeys(input.lower().replace(" ", ""))))
+    key = ''.join(sorted(dict.fromkeys(input.lower().replace(" ", "").replace(".", ""))))
     response = dynamodb.get_item(TableName=table_name,
                                  Key={'id':{'S':key}})
     if 'Item' in response:

@@ -8,7 +8,7 @@ dynamodb = boto3.client('dynamodb')
 table_name = "anagram-data"
 
 def anagram(input) :
-    key = ''.join(sorted(input.lower().replace(" ", "")))
+    key = ''.join(sorted(input.lower().replace(" ", "").replace(".", "")))
     response = dynamodb.get_item(TableName=table_name,
                                  Key={'id':{'S':key}})
     if 'Item' in response:
