@@ -1,11 +1,11 @@
 import json
 import re
 from sys import argv
-from wordgrep import grep_file
+from wordgrep import grep_file, WORDS_FILE
 
 def regex_match(pattern) :
     regex = re.compile(pattern, re.IGNORECASE)
-    return grep_file(regex, "words.txt")
+    return grep_file(regex, WORDS_FILE)
 
 def lambda_handler(event, context) :
     headers = {
