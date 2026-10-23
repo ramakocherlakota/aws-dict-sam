@@ -41,13 +41,19 @@ def words_by_length() :
 def parse_lengths(input) :
     return [int(n) for n in re.findall(r"\d+", input)]
 
-def multi_anagram(input, lengths) :
+def multi_anagram(input, lengths, deadline=None) :
     """Find all ways to split the letters of input into words of the given
     lengths. With no lengths, finds single-word anagrams. Returns
     (matches, truncated) where each match is a string of words separated by
     spaces, in the order of lengths."""
+    if deadline is None :
+        deadline = time.monotonic() + TIME_LIMIT_SECONDS
     letters = re.sub("[^a-z]", "", input.lower())
     if lengths is None :
+        # single-word anagram: nothing to match for empty input or for more
+        # letters than any word has, as with the old table lookup
+        if not letters or len(letters) > MAX_LETTERS :
+            return [], False
         lengths = [len(letters)]
     if not lengths or any(n < 1 for n in lengths) :
         raise ValueError("Word lengths must be positive numbers")
@@ -79,7 +85,6 @@ def multi_anagram(input, lengths) :
     solutions = set()
     # (remaining lengths, remaining letters) states known to lead nowhere
     dead_ends = set()
-    deadline = time.monotonic() + TIME_LIMIT_SECONDS
     timed_out = False
 
     def search(lengths_left, remaining, options, chosen) :
@@ -126,7 +131,7 @@ def multi_anagram(input, lengths) :
                     if search(rest, remaining - counts, fitting, chosen) :
                         found = True
                     chosen.pop()
-                    if timed_out or len(solutions) >= MAX_RESULTS :
+                    if timed_out or len(solutions) > MAX_RESULTS :
                         return found
         if not found :
             dead_ends.add(state)
@@ -158,14 +163,15 @@ def multi_anagram(input, lengths) :
                 for slot, word in zip(slots, words) :
                     result[slot] = word
             matches.append(' '.join(result))
-            if len(matches) >= MAX_RESULTS :
+            if len(matches) > MAX_RESULTS :
                 break
-        if len(matches) >= MAX_RESULTS :
-            truncated = True
+        if len(matches) > MAX_RESULTS :
             break
-    if len(solutions) >= MAX_RESULTS :
+    # matches and solutions are collected one past the cap, so going over it
+    # means something really was left out
+    if len(matches) > MAX_RESULTS or len(solutions) > MAX_RESULTS :
         truncated = True
-    return sorted(matches), truncated
+    return sorted(matches[:MAX_RESULTS]), truncated
 
 def lambda_handler(event, context) :
     headers = {
@@ -179,8 +185,14 @@ def lambda_handler(event, context) :
     # /anagram passes no lengths and gets single-word anagrams
     lengths = parse_lengths(params['lengths']) if params.get('lengths') else None
     print("pattern=" + input + " lengths=" + str(lengths))
+    # stop searching with a few seconds of the Lambda's time left, so a long
+    # search still returns its partial results instead of being killed
+    time_limit = TIME_LIMIT_SECONDS
+    if context :
+        time_limit = min(time_limit, context.get_remaining_time_in_millis() / 1000 - 5)
+    deadline = time.monotonic() + time_limit
     try :
-        matches, truncated = multi_anagram(input, lengths)
+        matches, truncated = multi_anagram(input, lengths, deadline)
     except ValueError as err :
         return {
             "headers": headers,

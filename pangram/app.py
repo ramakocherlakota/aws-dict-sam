@@ -17,7 +17,7 @@ def lambda_handler(event, context) :
         "Access-Control-Allow-Methods": "GET",
         "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
     };
-    input = event['queryStringParameters']['pattern']
+    input = (event['queryStringParameters'] or {}).get('pattern', '')
     print("pattern=" + input)
     matches = pangram(input)
     return {
