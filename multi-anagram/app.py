@@ -4,6 +4,7 @@ import time
 from collections import defaultdict
 from itertools import combinations_with_replacement, product
 from sys import argv
+from wordgrep import read_words
 
 MAX_RESULTS = 1000
 TIME_LIMIT_SECONDS = 20
@@ -32,11 +33,9 @@ def words_by_length() :
     if _words_by_length is None :
         _words_by_length = defaultdict(list)
         valid = re.compile("[a-z]+")
-        with open("words.txt") as file :
-            for line in file :
-                word = line.rstrip()
-                if valid.fullmatch(word) :
-                    _words_by_length[len(word)].append(word)
+        for word in read_words() :
+            if valid.fullmatch(word) :
+                _words_by_length[len(word)].append(word)
     return _words_by_length
 
 def parse_lengths(input) :
@@ -44,9 +43,12 @@ def parse_lengths(input) :
 
 def multi_anagram(input, lengths) :
     """Find all ways to split the letters of input into words of the given
-    lengths. Returns (matches, truncated) where each match is a string of
-    words separated by spaces, in the order of lengths."""
+    lengths. With no lengths, finds single-word anagrams. Returns
+    (matches, truncated) where each match is a string of words separated by
+    spaces, in the order of lengths."""
     letters = re.sub("[^a-z]", "", input.lower())
+    if lengths is None :
+        lengths = [len(letters)]
     if not lengths or any(n < 1 for n in lengths) :
         raise ValueError("Word lengths must be positive numbers")
     if len(letters) > MAX_LETTERS :
@@ -174,7 +176,8 @@ def lambda_handler(event, context) :
     };
     params = event['queryStringParameters'] or {}
     input = params.get('pattern', '')
-    lengths = parse_lengths(params.get('lengths', ''))
+    # /anagram passes no lengths and gets single-word anagrams
+    lengths = parse_lengths(params['lengths']) if params.get('lengths') else None
     print("pattern=" + input + " lengths=" + str(lengths))
     try :
         matches, truncated = multi_anagram(input, lengths)
@@ -196,4 +199,4 @@ def lambda_handler(event, context) :
 
 
 if __name__ == "__main__":
-    print(multi_anagram(argv[1], parse_lengths(argv[2])))
+    print(multi_anagram(argv[1], parse_lengths(argv[2]) if len(argv) > 2 else None))

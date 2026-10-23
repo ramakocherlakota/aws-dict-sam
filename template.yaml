@@ -46,36 +46,14 @@ Resources:
                         Path: /fill-in-blanks
                         Method: get
 
-    AnagramFunction:
-        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-        Properties:
-            CodeUri: anagram/
-            Policies:
-              - AWSLambdaExecute
-              - Version: '2012-10-17' # Policy Document
-                Statement:
-                  - Effect: Allow
-                    Action:
-                      - dynamodb:GetItem
-                    Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/anagram-data'
-            Handler: app.lambda_handler
-            Runtime: python3.12
-            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-                Variables:
-                    PARAM1: VALUE
-            Events:
-                Anagram:
-                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-                    Properties:
-                        Path: /anagram
-                        Method: get
-
     MultiAnagramFunction:
         Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
         Properties:
             CodeUri: multi-anagram/
             Handler: app.lambda_handler
             Runtime: python3.12
+            Layers:
+                - !Ref CommonLayer
             # the search can take a while for long inputs; API Gateway gives up after 29s
             Timeout: 28
             MemorySize: 1024
@@ -85,21 +63,21 @@ Resources:
                     Properties:
                         Path: /multi-anagram
                         Method: get
+                # single-word anagrams are the same search with one length
+                Anagram:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /anagram
+                        Method: get
 
     PangramFunction:
         Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
         Properties:
             CodeUri: pangram/
-            Policies:
-              - AWSLambdaExecute
-              - Version: '2012-10-17' # Policy Document
-                Statement:
-                  - Effect: Allow
-                    Action:
-                      - dynamodb:GetItem
-                    Resource: 'arn:aws:dynamodb:us-east-1:111144063151:table/pangram-data'
             Handler: app.lambda_handler
             Runtime: python3.12
+            Layers:
+                - !Ref CommonLayer
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
                 Variables:
                     PARAM1: VALUE
@@ -144,16 +122,8 @@ Outputs:
 
 
     AnagramApi:
-      Description: "API Gateway endpoint URL for Prod stage for Anagram function"
+      Description: "API Gateway endpoint URL for Prod stage for single-word anagrams (served by the Multi-Word Anagram function)"
       Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/anagram/"
-
-    AnagramFunction:
-      Description: "Anagram Lambda Function ARN"
-      Value: !GetAtt AnagramFunction.Arn
-
-    AnagramFunctionIamRole:
-      Description: "Implicit IAM Role created for Anagram function"
-      Value: !GetAtt AnagramFunctionRole.Arn
 
     MultiAnagramApi:
       Description: "API Gateway endpoint URL for Prod stage for Multi-Word Anagram function"

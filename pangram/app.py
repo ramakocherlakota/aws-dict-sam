@@ -1,50 +1,33 @@
-import boto3
-import uuid
-import sys
 import json
-from botocore.exceptions import ClientError
-
-dynamodb = boto3.client('dynamodb')
-table_name = "pangram-data"
+import re
+from sys import argv
+from wordgrep import read_words
 
 def pangram(input) :
-    key = ''.join(sorted(dict.fromkeys(input.lower().replace(" ", "").replace(".", ""))))
-    response = dynamodb.get_item(TableName=table_name,
-                                 Key={'id':{'S':key}})
-    if 'Item' in response:
-        return response['Item'].get('words').get('SS')
-    else:
+    # words that use every one of the given letters and no others
+    letters = set(re.sub("[^a-z]", "", input.lower()))
+    if not letters :
         return []
-    
+    return [word for word in read_words() if set(word) == letters]
+
 def lambda_handler(event, context) :
     headers = {
-            "Access-Control-Allow-Headers": 
-            "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
-        };
-    try :
-        matches = pangram(event['queryStringParameters']['pattern'])
+        "Access-Control-Allow-Headers":
+        "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Origin": "http://dict.rkocherl.net"
+    };
+    input = event['queryStringParameters']['pattern']
+    print("pattern=" + input)
+    matches = pangram(input)
+    return {
+        "headers" : headers,
+        "statusCode": 200,
+        "body": json.dumps(
+            {"matches": matches}
+        )
+    }
 
-        return {
-            "headers": headers,
-            "statusCode": 200,
-            "body": json.dumps(
-                {"matches": matches}
-            )
-        }
-    except ClientError as err :
-        return {
-            "headers": headers,
-            "statusCode": 500,
-            "body": json.dumps(
-                {
-                    "error": {
-                        "code" : err.response['Error']['Code'],
-                        "message" : err.response['Error']['Message']
-                    }
-                }
-            )
-        }
-        
 
+if __name__ == "__main__":
+    print(pangram(argv[1]))
