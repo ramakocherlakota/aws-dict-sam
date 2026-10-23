@@ -70,6 +70,22 @@ Resources:
                         Path: /anagram
                         Method: get
 
+    MultiAnagramFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: multi-anagram/
+            Handler: app.lambda_handler
+            Runtime: python3.12
+            # the search can take a while for long inputs; API Gateway gives up after 29s
+            Timeout: 28
+            MemorySize: 1024
+            Events:
+                MultiAnagram:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /multi-anagram
+                        Method: get
+
     PangramFunction:
         Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
         Properties:
@@ -138,6 +154,18 @@ Outputs:
     AnagramFunctionIamRole:
       Description: "Implicit IAM Role created for Anagram function"
       Value: !GetAtt AnagramFunctionRole.Arn
+
+    MultiAnagramApi:
+      Description: "API Gateway endpoint URL for Prod stage for Multi-Word Anagram function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/multi-anagram/"
+
+    MultiAnagramFunction:
+      Description: "Multi-Word Anagram Lambda Function ARN"
+      Value: !GetAtt MultiAnagramFunction.Arn
+
+    MultiAnagramFunctionIamRole:
+      Description: "Implicit IAM Role created for Multi-Word Anagram function"
+      Value: !GetAtt MultiAnagramFunctionRole.Arn
 
     PangramApi:
       Description: "API Gateway endpoint URL for Prod stage for Pangram function"
