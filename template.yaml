@@ -14,7 +14,8 @@ Globals:
       Cors:
         AllowMethods: "'*'"
         AllowHeaders: "'*'"
-        AllowOrigin: "'*.ramakocherlakota.net'"
+        # the site is served from dict.rkocherl.net; matches the header each function sends
+        AllowOrigin: "'http://dict.rkocherl.net'"
 
 
 Resources:
@@ -57,6 +58,9 @@ Resources:
             # the search can take a while for long inputs; API Gateway gives up after 29s
             Timeout: 28
             MemorySize: 1024
+            # at most 5 searches at once, so a flood of slow requests can't run
+            # up the bill or starve the other functions of account concurrency
+            ReservedConcurrentExecutions: 5
             Events:
                 MultiAnagram:
                     Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
