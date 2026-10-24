@@ -41,11 +41,14 @@ def words_by_length() :
 def parse_lengths(input) :
     return [int(n) for n in re.findall(r"\d+", input)]
 
-def multi_anagram(input, lengths, deadline=None) :
+def multi_anagram(input, lengths, deadline=None, offset=0) :
     """Find all ways to split the letters of input into words of the given
-    lengths. With no lengths, finds single-word anagrams. Returns
-    (matches, truncated) where each match is a string of words separated by
-    spaces, in the order of lengths."""
+    lengths. With no lengths, finds single-word anagrams. Returns one page of
+    up to MAX_RESULTS matches starting at offset, as (matches, more,
+    timed_out): more says there are matches after this page, timed_out that
+    the search stopped early. Each match is a string of words separated by
+    spaces, in the order of lengths. Matches come in the order the search
+    finds them, which is the same on every call, so pages line up."""
     if deadline is None :
         deadline = time.monotonic() + TIME_LIMIT_SECONDS
     letters = re.sub("[^a-z]", "", input.lower())
@@ -53,7 +56,7 @@ def multi_anagram(input, lengths, deadline=None) :
         # single-word anagram: nothing to match for empty input or for more
         # letters than any word has, as with the old table lookup
         if not letters or len(letters) > MAX_LETTERS :
-            return [], False
+            return [], False, False
         lengths = [len(letters)]
     if not lengths or any(n < 1 for n in lengths) :
         raise ValueError("Word lengths must be positive numbers")
@@ -80,9 +83,7 @@ def multi_anagram(input, lengths, deadline=None) :
     # Every letter has to be used, so at each step pick the remaining letter
     # that the fewest candidate words can cover and branch on the words that
     # cover it. This prunes far better than filling slots in a fixed order.
-    # A solution is a multiset of (length, key) pairs; it can be reached more
-    # than once when a letter is repeated, so solutions are kept in a set.
-    solutions = set()
+    # The search is a generator, so it only runs as far as the page asked for.
     # (remaining lengths, remaining letters) states known to lead nowhere
     dead_ends = set()
     timed_out = False
@@ -90,23 +91,23 @@ def multi_anagram(input, lengths, deadline=None) :
     def search(lengths_left, remaining, options, chosen) :
         # lengths_left is a sorted tuple of the word lengths still to fill and
         # options maps each of those lengths to the candidates that still fit.
-        # Returns True if at least one solution was found from this state.
+        # Yields each solution as a sorted tuple of (length, key) pairs.
         nonlocal timed_out
         if not lengths_left :
-            solutions.add(tuple(sorted(chosen)))
-            return True
+            yield tuple(sorted(chosen))
+            return
         state = (lengths_left, remaining)
         if state in dead_ends :
-            return False
+            return
         if time.monotonic() > deadline :
             timed_out = True
-            return False
+            return
         fitting = {}
         for n in set(lengths_left) :
             fitting[n] = [opt for opt in options[n] if fits(opt[1], remaining)]
             if not fitting[n] :
                 dead_ends.add(state)
-                return False
+                return
         coverage = defaultdict(int)
         for opts in fitting.values() :
             for opt in opts :
@@ -117,30 +118,26 @@ def multi_anagram(input, lengths, deadline=None) :
             if (remaining >> (8 * i)) & 0xff :
                 if coverage[i] == 0 :
                     dead_ends.add(state)
-                    return False
+                    return
                 if best is None or coverage[i] < coverage[best] :
                     best = i
         found = False
-        for n, opts in fitting.items() :
+        # sorted so the order doesn't depend on set iteration order
+        for n in sorted(fitting) :
             rest = list(lengths_left)
             rest.remove(n)
             rest = tuple(rest)
-            for key, counts, letters_in_key in opts :
+            for key, counts, letters_in_key in fitting[n] :
                 if best in letters_in_key :
                     chosen.append((n, key))
-                    if search(rest, remaining - counts, fitting, chosen) :
+                    for solution in search(rest, remaining - counts, fitting, chosen) :
                         found = True
+                        yield solution
                     chosen.pop()
-                    if timed_out or len(solutions) > MAX_RESULTS :
-                        return found
+                    if timed_out :
+                        return
         if not found :
             dead_ends.add(state)
-        return found
-
-    options = {n : [(key, letter_counts(key), frozenset(ord(c) - 97 for c in key))
-                    for key in groups]
-               for n, groups in candidates.items()}
-    search(tuple(sorted(lengths)), pool, options, [])
 
     # Turn each solution into word combinations in the caller's order of
     # lengths. Slots of equal length are interchangeable, so each set of
@@ -148,11 +145,10 @@ def multi_anagram(input, lengths, deadline=None) :
     slots_by_length = defaultdict(list)
     for i, n in enumerate(lengths) :
         slots_by_length[n].append(i)
-    matches = []
-    truncated = timed_out
-    for solution in sorted(solutions) :
+
+    def expand(solution) :
         per_length = []
-        for n, slots in slots_by_length.items() :
+        for n, slots in sorted(slots_by_length.items()) :
             keys = [key for length, key in solution if length == n]
             choices = [combinations_with_replacement(candidates[n][key], keys.count(key))
                        for key in sorted(set(keys))]
@@ -162,16 +158,30 @@ def multi_anagram(input, lengths, deadline=None) :
             for (slots, _), words in zip(per_length, combo) :
                 for slot, word in zip(slots, words) :
                     result[slot] = word
-            matches.append(' '.join(result))
-            if len(matches) > MAX_RESULTS :
+            yield ' '.join(result)
+
+    options = {n : [(key, letter_counts(key), frozenset(ord(c) - 97 for c in key))
+                    for key in sorted(groups)]
+               for n, groups in candidates.items()}
+    # A solution can be reached more than once when a letter is repeated
+    seen = set()
+    page = []
+    index = 0
+    more = False
+    for solution in search(tuple(sorted(lengths)), pool, options, []) :
+        if solution in seen :
+            continue
+        seen.add(solution)
+        for match in expand(solution) :
+            if index >= offset + MAX_RESULTS :
+                more = True
                 break
-        if len(matches) > MAX_RESULTS :
+            if index >= offset :
+                page.append(match)
+            index += 1
+        if more :
             break
-    # matches and solutions are collected one past the cap, so going over it
-    # means something really was left out
-    if len(matches) > MAX_RESULTS or len(solutions) > MAX_RESULTS :
-        truncated = True
-    return sorted(matches[:MAX_RESULTS]), truncated
+    return sorted(page), more, timed_out
 
 def lambda_handler(event, context) :
     headers = {
@@ -182,6 +192,10 @@ def lambda_handler(event, context) :
     };
     params = event['queryStringParameters'] or {}
     input = params.get('pattern', '')
+    try :
+        offset = max(0, int(params.get('offset') or 0))
+    except ValueError :
+        offset = 0
     # /anagram passes no lengths and gets single-word anagrams
     lengths = parse_lengths(params['lengths']) if params.get('lengths') else None
     print("pattern=" + input + " lengths=" + str(lengths))
@@ -192,7 +206,7 @@ def lambda_handler(event, context) :
         time_limit = min(time_limit, context.get_remaining_time_in_millis() / 1000 - 5)
     deadline = time.monotonic() + time_limit
     try :
-        matches, truncated = multi_anagram(input, lengths, deadline)
+        matches, more, timed_out = multi_anagram(input, lengths, deadline, offset)
     except ValueError as err :
         return {
             "headers": headers,
@@ -205,7 +219,9 @@ def lambda_handler(event, context) :
         "headers" : headers,
         "statusCode": 200,
         "body": json.dumps(
-            {"matches": matches, "truncated": truncated}
+            {"matches": matches, "offset": offset, "more": more, "timed_out": timed_out,
+             # kept for older pages: something was left out of this response
+             "truncated": more or timed_out}
         )
     }
 
