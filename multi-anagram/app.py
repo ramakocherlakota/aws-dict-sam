@@ -41,14 +41,18 @@ def words_by_length() :
 def parse_lengths(input) :
     return [int(n) for n in re.findall(r"\d+", input)]
 
-def multi_anagram(input, lengths, deadline=None, offset=0) :
+def parse_words(input) :
+    return [word for word in re.split("[^a-z]+", (input or "").lower()) if word]
+
+def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=()) :
     """Find all ways to split the letters of input into words of the given
     lengths. With no lengths, finds single-word anagrams. Returns one page of
     up to MAX_RESULTS matches starting at offset, as (matches, more,
     timed_out): more says there are matches after this page, timed_out that
     the search stopped early. Each match is a string of words separated by
     spaces, in the order of lengths. Matches come in the order the search
-    finds them, which is the same on every call, so pages line up."""
+    finds them, which is the same on every call, so pages line up.
+    Words in include appear in every match; words in exclude in none."""
     if deadline is None :
         deadline = time.monotonic() + TIME_LIMIT_SECONDS
     letters = re.sub("[^a-z]", "", input.lower())
@@ -68,6 +72,19 @@ def multi_anagram(input, lengths, deadline=None, offset=0) :
     pool = letter_counts(letters)
     words = words_by_length()
 
+    # Words the caller says are definitely in the answer take their letters
+    # and one slot of their length before the search starts
+    slots_left = list(lengths)
+    for word in include :
+        if len(word) not in slots_left :
+            raise ValueError(f"There's no word of length {len(word)} left for \"{word}\"")
+        counts = letter_counts(word)
+        if not fits(counts, pool) :
+            raise ValueError(f"There aren't enough letters left for \"{word}\"")
+        slots_left.remove(len(word))
+        pool -= counts
+    excluded = set(exclude)
+
     # For each needed length, group the words that can be made from the pool
     # by their sorted letters, so the search runs over letter sets rather
     # than individual words.
@@ -75,6 +92,8 @@ def multi_anagram(input, lengths, deadline=None, offset=0) :
     for n in set(lengths) :
         groups = defaultdict(list)
         for word in words.get(n, []) :
+            if word in excluded :
+                continue
             counts = letter_counts(word)
             if fits(counts, pool) :
                 groups[''.join(sorted(word))].append(word)
@@ -163,15 +182,22 @@ def multi_anagram(input, lengths, deadline=None, offset=0) :
     options = {n : [(key, letter_counts(key), frozenset(ord(c) - 97 for c in key))
                     for key in sorted(groups)]
                for n, groups in candidates.items()}
+    # Included words join every solution as groups of their own; the "+"
+    # can't clash with a real letter key
+    fixed = []
+    for word in include :
+        candidates[len(word)]["+" + word] = [word]
+        fixed.append((len(word), "+" + word))
     # A solution can be reached more than once when a letter is repeated
     seen = set()
     page = []
     index = 0
     more = False
-    for solution in search(tuple(sorted(lengths)), pool, options, []) :
+    for solution in search(tuple(sorted(slots_left)), pool, options, []) :
         if solution in seen :
             continue
         seen.add(solution)
+        solution = tuple(sorted(solution + tuple(fixed)))
         for match in expand(solution) :
             if index >= offset + MAX_RESULTS :
                 more = True
@@ -198,7 +224,10 @@ def lambda_handler(event, context) :
         offset = 0
     # /anagram passes no lengths and gets single-word anagrams
     lengths = parse_lengths(params['lengths']) if params.get('lengths') else None
-    print("pattern=" + input + " lengths=" + str(lengths))
+    # comma-separated words to require in, or rule out of, every match
+    include = parse_words(params.get('include'))
+    exclude = parse_words(params.get('exclude'))
+    print("pattern=" + input + " lengths=" + str(lengths) + " include=" + str(include) + " exclude=" + str(exclude))
     # stop searching with a few seconds of the Lambda's time left, so a long
     # search still returns its partial results instead of being killed
     time_limit = TIME_LIMIT_SECONDS
@@ -206,7 +235,7 @@ def lambda_handler(event, context) :
         time_limit = min(time_limit, context.get_remaining_time_in_millis() / 1000 - 5)
     deadline = time.monotonic() + time_limit
     try :
-        matches, more, timed_out = multi_anagram(input, lengths, deadline, offset)
+        matches, more, timed_out = multi_anagram(input, lengths, deadline, offset, include, exclude)
     except ValueError as err :
         return {
             "headers": headers,
