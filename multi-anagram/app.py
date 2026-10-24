@@ -53,8 +53,8 @@ def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=(
     spaces, in the order of lengths. Matches come in the order the search
     finds them, which is the same on every call, so pages line up.
     Words in include appear in every match; words in exclude in none.
-    Only matches containing every string in filter are returned, and paging
-    counts only those."""
+    Only matches that have every word in filter as one of their words are
+    returned, and paging counts only those."""
     if deadline is None :
         deadline = time.monotonic() + TIME_LIMIT_SECONDS
     letters = re.sub("[^a-z]", "", input.lower())
@@ -201,7 +201,7 @@ def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=(
         seen.add(solution)
         solution = tuple(sorted(solution + tuple(fixed)))
         for match in expand(solution) :
-            if not all(term in match for term in filter) :
+            if filter and not all(term in match.split(" ") for term in filter) :
                 continue
             if index >= offset + MAX_RESULTS :
                 more = True
@@ -231,7 +231,7 @@ def lambda_handler(event, context) :
     # comma-separated words to require in, or rule out of, every match
     include = parse_words(params.get('include'))
     exclude = parse_words(params.get('exclude'))
-    # space-separated text that every returned match must contain
+    # space-separated words that every returned match must have as words
     filter = (params.get('filter') or "").lower().split()
     print("pattern=" + input + " lengths=" + str(lengths) + " include=" + str(include) + " exclude=" + str(exclude) + " filter=" + str(filter))
     # stop searching with a few seconds of the Lambda's time left, so a long
