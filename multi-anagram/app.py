@@ -44,7 +44,7 @@ def parse_lengths(input) :
 def parse_words(input) :
     return [word for word in re.split("[^a-z]+", (input or "").lower()) if word]
 
-def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=()) :
+def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=(), filter=()) :
     """Find all ways to split the letters of input into words of the given
     lengths. With no lengths, finds single-word anagrams. Returns one page of
     up to MAX_RESULTS matches starting at offset, as (matches, more,
@@ -52,7 +52,9 @@ def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=(
     the search stopped early. Each match is a string of words separated by
     spaces, in the order of lengths. Matches come in the order the search
     finds them, which is the same on every call, so pages line up.
-    Words in include appear in every match; words in exclude in none."""
+    Words in include appear in every match; words in exclude in none.
+    Only matches containing every string in filter are returned, and paging
+    counts only those."""
     if deadline is None :
         deadline = time.monotonic() + TIME_LIMIT_SECONDS
     letters = re.sub("[^a-z]", "", input.lower())
@@ -199,6 +201,8 @@ def multi_anagram(input, lengths, deadline=None, offset=0, include=(), exclude=(
         seen.add(solution)
         solution = tuple(sorted(solution + tuple(fixed)))
         for match in expand(solution) :
+            if not all(term in match for term in filter) :
+                continue
             if index >= offset + MAX_RESULTS :
                 more = True
                 break
@@ -227,7 +231,9 @@ def lambda_handler(event, context) :
     # comma-separated words to require in, or rule out of, every match
     include = parse_words(params.get('include'))
     exclude = parse_words(params.get('exclude'))
-    print("pattern=" + input + " lengths=" + str(lengths) + " include=" + str(include) + " exclude=" + str(exclude))
+    # space-separated text that every returned match must contain
+    filter = (params.get('filter') or "").lower().split()
+    print("pattern=" + input + " lengths=" + str(lengths) + " include=" + str(include) + " exclude=" + str(exclude) + " filter=" + str(filter))
     # stop searching with a few seconds of the Lambda's time left, so a long
     # search still returns its partial results instead of being killed
     time_limit = TIME_LIMIT_SECONDS
@@ -235,7 +241,7 @@ def lambda_handler(event, context) :
         time_limit = min(time_limit, context.get_remaining_time_in_millis() / 1000 - 5)
     deadline = time.monotonic() + time_limit
     try :
-        matches, more, timed_out = multi_anagram(input, lengths, deadline, offset, include, exclude)
+        matches, more, timed_out = multi_anagram(input, lengths, deadline, offset, include, exclude, filter)
     except ValueError as err :
         return {
             "headers": headers,
